@@ -1,52 +1,63 @@
-import { Component, OnInit } from '@angular/core';
-import { UserService } from '../../services/user.service';
-import { AuthService } from '../../services/auth.service';
-import { StorageService } from '../../services/storage.service';
+import { Component } from '@angular/core';
+import { FormGroup, Validators, FormBuilder } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import { NzNotificationService } from 'ng-zorro-antd/notification';
+import { AuthenticationStorageService } from '../../services/authentication-storage.service';
+import { AuthenticationService } from '../../services/authentication.service';
 
 @Component({
   selector: 'app-login',
   templateUrl: './login.component.html',
-  styleUrls: ['./login.component.css']
+  styleUrls: ['./login.component.scss'],
 })
-export class LoginComponent implements OnInit {
-  form: any = {
-    username: null,
-    password: null
-  };
-  isLoggedIn = false;
-  isLoginFailed = false;
-  errorMessage = '';
-  roles: string[] = [];
+export class LoginComponent {
+  passwordVisible = false;
+  password?: string;
+  loginForm: FormGroup = this.fb.group({
+    Email: [null, [Validators.required]],
+    Password: [null, [Validators.required]],
+    remember: [false],
+  });
 
-  constructor(private authService: AuthService, private storageService: StorageService) { }
-
-  ngOnInit(): void {
-    if (this.storageService.isLoggedIn()) {
-      this.isLoggedIn = true;
-      this.roles = this.storageService.getUser().roles;
+  constructor(
+    private authenticationStorageService: AuthenticationStorageService,
+    private authenticationService: AuthenticationService,
+    private route: ActivatedRoute,
+    private router: Router,
+    private fb: FormBuilder,
+    private notification: NzNotificationService
+  ) {
+    if (this.authenticationService.getIsUserAuthenticated()) {
+      this.router.navigateByUrl('/home');
     }
   }
 
-  onSubmit(): void {
-    const { username, password } = this.form;
+  ngOnInit() {}
 
-    this.authService.login(username, password).subscribe({
-      next: data => {
-        this.storageService.saveUser(data);
+  login() {
+    const credentials = {
+      Email: this.loginForm.controls['Email'].value,
+      Password: this.loginForm.controls['Password'].value,
+    };
+    this.authenticationStorageService.login(credentials).subscribe({
+      next: (response) => {
+        if (response.success === true) {
+          // this.router.navigate(['home/dashboard']);
+          this.notification.success('Success', response.message);
+          this.router.navigate(['home/event']);
+        }
 
-        this.isLoginFailed = false;
-        this.isLoggedIn = true;
-        this.roles = this.storageService.getUser().roles;
-        this.reloadPage();
+        if (response.success === false) {
+          this.notification.error('Error', response.message);
+        }
       },
-      error: err => {
-        this.errorMessage = err.error.message;
-        this.isLoginFailed = true;
-      }
     });
   }
 
-  reloadPage(): void {
-    window.location.reload();
+  resetLoginForm() {
+    this.loginForm.reset();
+  }
+  togglePasswordVisibility(): void {
+    this.passwordVisible = !this.passwordVisible;
   }
 }

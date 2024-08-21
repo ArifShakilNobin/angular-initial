@@ -1,26 +1,31 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { BoardAdminComponent } from './modules/authentication/components/board-admin/board-admin.component';
-import { BoardModeratorComponent } from './modules/authentication/components/board-moderator/board-moderator.component';
-import { BoardUserComponent } from './modules/authentication/components/board-user/board-user.component';
-import { HomeComponent } from './modules/authentication/components/home/home.component';
+import { LandingComponent } from './modules/landing/component/landing/landing.component';
+import { DefaultLayoutComponent } from './shared/modules/default-layout/default-layout.component';
+import { AuthenticationGuard } from './modules/authentication/services/authentication.guard';
+import { LocationStrategy, HashLocationStrategy } from '@angular/common';
 import { LoginComponent } from './modules/authentication/components/login/login.component';
-import { ProfileComponent } from './modules/authentication/components/profile/profile.component';
-import { RegisterComponent } from './modules/authentication/components/register/register.component';
+import { RegistrationComponent } from './modules/authentication/components/registration/registration.component';
 
 const routes: Routes = [
-  { path: 'home', component: HomeComponent },
+  { path: '', component: LandingComponent },
   { path: 'login', component: LoginComponent },
-  { path: 'register', component: RegisterComponent },
-  { path: 'profile', component: ProfileComponent },
-  { path: 'user', component: BoardUserComponent },
-  { path: 'mod', component: BoardModeratorComponent },
-  { path: 'admin', component: BoardAdminComponent },
-  { path: '', redirectTo: 'home', pathMatch: 'full' }
+  { path: 'register', component: RegistrationComponent },
+
+  {
+    path: 'home',
+    component: DefaultLayoutComponent,
+    canActivate: [AuthenticationGuard],
+    children: [
+      { path: 'authentication',loadChildren: () =>import('./modules/authentication/authentication.module').then((m) => m.AuthenticationModule),},
+      // { path: 'authorization', loadChildren: () => import('./modules/authorization/authorization.module').then((m) => m.AuthorizationModule),},
+    ],
+  },
 ];
 
 @NgModule({
   imports: [RouterModule.forRoot(routes)],
-  exports: [RouterModule]
+  providers: [{ provide: LocationStrategy, useClass: HashLocationStrategy }],
+  exports: [RouterModule],
 })
-export class AppRoutingModule { }
+export class AppRoutingModule {}

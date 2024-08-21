@@ -20,9 +20,14 @@
     "@angular/platform-browser-dynamic": "^18.2.0",
     "@angular/router": "^18.2.0",
     "bootstrap": "^5.3.3",
+    "http-status-codes": "^2.3.0",
+    "idlejs": "^3.0.0",
+    "ng-zorro-antd": "^18.1.1",
+    "ngx-ui-loader": "^13.0.0",
     "node": "^18.19.1",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
+    "xlsx": "^0.18.5",
     "zone.js": "~0.14.10"
   },
   "devDependencies": {

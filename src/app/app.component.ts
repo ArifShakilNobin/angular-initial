@@ -1,8 +1,9 @@
 import { Component } from '@angular/core';
-import { Subscription } from 'rxjs';
-import { AuthService } from './modules/authentication/services/auth.service';
-import { StorageService } from './modules/authentication/services/storage.service';
-import { EventBusService } from './shared/services/event-bus.service';
+import { NavigationEnd, Router } from '@angular/router';
+import { Idle } from 'idlejs';
+import { AuthenticationStorageService } from './modules/authentication/services/authentication-storage.service';
+import { AuthenticationService } from './modules/authentication/services/authentication.service';
+import { environment } from 'src/environment/environment';
 
 @Component({
   selector: 'app-root',
@@ -10,50 +11,29 @@ import { EventBusService } from './shared/services/event-bus.service';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
-  title = 'immigration-visa';
-  private roles: string[] = [];
-  isLoggedIn = false;
-  showAdminBoard = false;
-  showModeratorBoard = false;
-  username?: string;
-
-  eventBusSub?: Subscription;
-
   constructor(
-    private storageService: StorageService,
-    private authService: AuthService,
-    private eventBusService: EventBusService
-  ) {}
-
+    private authenticationStorageService: AuthenticationStorageService,
+    private authenticationService: AuthenticationService,
+    private router: Router
+  ) {
+    // this.authenticationStorageService.autoLoginUser();
+ }
   ngOnInit(): void {
-    this.isLoggedIn = this.storageService.isLoggedIn();
+    this.router.events.subscribe((evt) => {
+      if (!(evt instanceof NavigationEnd)) {
+        return;
+      }
+      window.scrollTo(0, 0);
 
-    if (this.isLoggedIn) {
-      const user = this.storageService.getUser();
-      this.roles = user.roles;
-
-      this.showAdminBoard = this.roles.includes('ROLE_ADMIN');
-      this.showModeratorBoard = this.roles.includes('ROLE_MODERATOR');
-
-      this.username = user.username;
-    }
-
-    this.eventBusSub = this.eventBusService.on('logout', () => {
-      this.logout();
+      const idle = new Idle()
+        .whenNotInteractive()
+        .within(environment.autoLogoutTime.inMinute)
+        .do(() => this.logout())
+        .start();
     });
   }
 
-  logout(): void {
-    this.authService.logout().subscribe({
-      next: res => {
-        console.log(res);
-        this.storageService.clean();
-
-        window.location.reload();
-      },
-      error: err => {
-        console.log(err);
-      }
-    });
+  logout() {
+    this.authenticationStorageService.logout();
   }
 }
